@@ -13,6 +13,10 @@ class ClientThread extends Thread
     private final ClientThread[] threads;
     private int maxClientsCount;
 
+
+    private Board board = new Board(10, 10);
+
+
     public ClientThread(Socket clientSocket, ClientThread[] threads)
     {
         this.clientSocket = clientSocket;
