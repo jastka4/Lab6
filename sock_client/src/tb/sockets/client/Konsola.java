@@ -1,39 +1,50 @@
 package tb.sockets.client;
 
-import java.io.DataInputStream;
+import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.Socket;
 
 public class Konsola {
 
     private static DataOutputStream so;
-    private static DataInputStream si;
+    private static BufferedReader br;
     private static Socket sock;
 
     public static void main(String[] args) throws Exception {
         try {
             sock = new Socket("192.168.1.16", 6666);
             so = new DataOutputStream(sock.getOutputStream());
-            si = new DataInputStream(sock.getInputStream());
+            br = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 
-            String responseLine = si.readLine();
-            System.out.println("Read from the socket: " + responseLine);
+            System.out.println("Connected to: " + sock.getRemoteSocketAddress());
 
-            while (responseLine != null) {
+            String responseLine = br.readLine();
+            System.out.println(responseLine); // game board with battleships - bytes
+
+            int i = 0;
+            while (responseLine != null && i < 10)
+            {
                 if (responseLine.indexOf("busy") != -1) {
                     System.out.println("Disconnected");
                     break;
                 }
+                else
+                {
+                    String coordinates = i + "" + i +"\n";
+                    so.writeBytes(coordinates);
+                    responseLine = br.readLine();
+                    System.out.println(responseLine);
+                }
+                i++;
             }
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } finally {
             so.close();
-            si.close();
+            br.close();
             sock.close();
         }
     }
-
 }
