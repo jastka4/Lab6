@@ -8,8 +8,8 @@ import java.net.Socket;
 
 class ClientThread extends Thread
 {
-    private BufferedReader br = null;
-    private DataOutputStream os = null;
+    private BufferedReader bufferedReader = null;
+    private DataOutputStream dataOutputStream = null;
     private Socket clientSocket = null;
     private static ClientThread[] threads;
 
@@ -29,8 +29,8 @@ class ClientThread extends Thread
 
         try
         {
-            br = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            os = new DataOutputStream(clientSocket.getOutputStream());
+            bufferedReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            dataOutputStream = new DataOutputStream(clientSocket.getOutputStream());
 
             if (threads[threads.length - 1] == null && threads[threads.length - 1] != this) {
                 synchronized (this) {
@@ -38,7 +38,7 @@ class ClientThread extends Thread
                 }
             }
 
-            os.writeBytes(board.getBoardAsString() + '\n');
+            dataOutputStream.writeBytes(board.getBoardAsString() + '\n');
 
             for(ClientThread thread: threads)
             {
@@ -47,7 +47,7 @@ class ClientThread extends Thread
             }
 
             String responseLine;
-            while ((responseLine = br.readLine()) != null ) {
+            while ((responseLine = bufferedReader.readLine()) != null ) {
                 if(responseLine.startsWith("/quit"))
                 {
                     break;
@@ -62,14 +62,14 @@ class ClientThread extends Thread
                          checkWinner = 'W';
                     else
                         checkWinner = '.';
-                    os.writeBytes(checkWinner + checkHit + '\n');
+                    dataOutputStream.writeBytes(checkWinner + checkHit + '\n');
                     System.out.println(clientSocket.getRemoteSocketAddress() + "'s ship got " +checkWinner + checkHit);
                 }
             }
 
             System.out.println("Connection closed with " + clientSocket.getRemoteSocketAddress());
-            br.close();
-            os.close();
+            bufferedReader.close();
+            dataOutputStream.close();
             clientSocket.close();
 
             resetThread();
