@@ -16,8 +16,9 @@ public class MultiThreadServer {
 	public static void main(String[] args) {
 		try {
 			serverSocket = new ServerSocket(6666);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
+		}
+		catch (IOException e)
+		{
 			e.printStackTrace();
 		}
 		while (true) {
@@ -39,6 +40,24 @@ public class MultiThreadServer {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			if (checkIfAllPlayersConnected())
+			{
+				ClientThread.startGame();
+			}
+		}
+	}
+
+	private static boolean checkIfAllPlayersConnected()
+	{
+		return threads[maxClientsCount-1] != null;
+	}
+
+	protected static void updateThreads(ClientThread[] clientThreads)
+	{
+		int i = 0;
+		for(ClientThread thread: clientThreads)
+		{
+			threads[i] = thread;
 		}
 	}
 }

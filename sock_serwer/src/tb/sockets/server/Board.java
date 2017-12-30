@@ -2,15 +2,13 @@ package tb.sockets.server;
 
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
 public class Board {
     private static int boardLengthX;
     private static int boardLengthY;
 
-    private List<Battleship> battleships = new ArrayList<Battleship>();
+    private List<Battleship> battleships = new ArrayList<>();
     private static final int[] shipLengths = {4, 3, 3, 2, 2, 2, 1, 1, 1, 1};
 
     public Board(int boardLengthX, int boardLengthY) {
@@ -46,7 +44,7 @@ public class Board {
                         continue;
                     }
                     for (int i = 0; i < length; i++) {
-                        System.out.println(new Point(x, y + i));
+                        //System.out.println(new Point(x, y + i));
                         battleship.addCoordinate(new Point(x, y + i));
                     }
                     added = true;
@@ -69,7 +67,7 @@ public class Board {
                         continue;
                     }
                     for (int i = 0; i < length; i++) {
-                        System.out.println(new Point(x + i, y));
+                        //System.out.println(new Point(x + i, y));
                         battleship.addCoordinate(new Point(x + i, y));
                     }
                     added = true;
@@ -89,5 +87,56 @@ public class Board {
             }
         }
         return false;
+    }
+
+    public String getBoardAsString() {
+        String boardAsString = "";
+        for(int i = 0; i < boardLengthX; i++)
+        {
+            for (int j = 0; j < boardLengthY; j++)
+            {
+                boardAsString += (checkIfCoordinatesUsed(i,j)? "1" : "0");
+            }
+        }
+
+        //test of the generated string
+/*        for(int i = 0; i < 100; i++)
+        {
+            if(i % 10 == 0){
+                System.out.print("\n");
+            }
+            System.out.print(boardAsString.charAt(i));
+        }
+            System.out.print('\n');*/
+        return boardAsString;
+    }
+
+    public String getIfShipMissedHitOrSunken(int x, int y)
+    {
+        for(Battleship battleship: battleships)
+        {
+            if(battleship.getCoordinates().contains(new Point(x,y)))
+            {
+                battleship.addHit();
+                if(battleship.checkIfSunken())
+                {
+                    return "s" + battleship.getCoordinatesAsString();
+                }
+                return "h";
+            }
+        }
+        return "m";
+    }
+
+    public boolean checkIfAllShipsSunken()
+    {
+        for(Battleship battleship: battleships)
+        {
+            if(battleship.checkIfSunken() == false)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 }
