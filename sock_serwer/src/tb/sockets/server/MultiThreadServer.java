@@ -47,9 +47,8 @@ public class MultiThreadServer {
 		}
 	}
 
-	private static boolean checkIfAllPlayersConnected()
-	{
-		return threads[maxClientsCount-1] != null;
+	private static boolean checkIfAllPlayersConnected() {
+		return threads[maxClientsCount - 1] != null;
 	}
 
 	protected static void updateThreads(ClientThread[] clientThreads)
