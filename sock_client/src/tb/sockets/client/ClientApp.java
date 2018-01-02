@@ -6,7 +6,13 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -14,6 +20,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
@@ -46,6 +53,7 @@ public class ClientApp extends JFrame implements ActionListener {
 	private BufferedReader is;
 	private DataOutputStream os;
 	private String myBoard = "";
+	private String shotCoordinates = "";
 
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -68,6 +76,16 @@ public class ClientApp extends JFrame implements ActionListener {
 			e.printStackTrace();
 		}
 		drawGUI();
+
+		addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent e) {
+				int choose = JOptionPane.showConfirmDialog(e.getComponent(), "Do you really want to close the game?",
+						"Confirm Close", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+				if (choose == JOptionPane.YES_OPTION) {
+					e.getWindow().dispose();
+				}
+			}
+		});
 	}
 
 	private void connectToServer() throws UnknownHostException, IOException {
@@ -80,7 +98,7 @@ public class ClientApp extends JFrame implements ActionListener {
 	}
 
 	private void drawGUI() {
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		setSize(930, 600);
 		setLocationRelativeTo(null);
 		contentPane = new JPanel();
@@ -205,12 +223,10 @@ public class ClientApp extends JFrame implements ActionListener {
 		for (int i = 0; i < opponentsBattleFieldCells.length; i++) {
 			for (int j = 0; j < opponentsBattleFieldCells[0].length; j++) {
 				if (src == opponentsBattleFieldCells[i][j]) {
-					// opponentsBattleFieldCells[i][j].setBackground(new Color(0, 0, 0));
 					opponentsBattleFieldCells[i][j].setEnabled(false);
-
-					String coordinates = i + "" + j + "\n";
+					shotCoordinates = i + "" + j + "\n";
 					try {
-						os.writeBytes(coordinates);
+						os.writeBytes(shotCoordinates);
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					}
@@ -218,7 +234,7 @@ public class ClientApp extends JFrame implements ActionListener {
 					String responseLine;
 					try {
 						responseLine = is.readLine();
-						updateOpponentsBattleField(responseLine, coordinates);
+						processResponse(responseLine);
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					}
@@ -228,21 +244,33 @@ public class ClientApp extends JFrame implements ActionListener {
 		}
 	}
 
+	private void processResponse(String responseLine) {
+		if (responseLine.charAt(0) == '.') {
+			// game continues
+			JOptionPane.showMessageDialog(this, "You've lost the game :(\n Wanna play another game?");
+		} else if (responseLine.charAt(0) == 'L') {
+			// game is lost
+		} else if (responseLine.charAt(0) == 'W') {
+			// game is won
+		}
+		updateOpponentsBattleField(responseLine, shotCoordinates);
+	}
+
 	private void updateOpponentsBattleField(String responseLine, String lastShotLocation) { // TODO dokonczyc
 		System.out.println(responseLine + "||" + lastShotLocation);
-		if (responseLine.equals(".m")) {
+		if (responseLine.charAt(1) == 'm') {
 			int x = lastShotLocation.charAt(0) - 48;
 			int y = lastShotLocation.charAt(1) - 48;
 			opponentsBattleFieldCells[x][y].setBackground(Color.WHITE);
-		} else if (responseLine.equals(".h")) {
+		} else if (responseLine.charAt(1) == 'h') {
 			int x = lastShotLocation.charAt(0) - 48;
 			int y = lastShotLocation.charAt(1) - 48;
 			opponentsBattleFieldCells[x][y].setBackground(Color.ORANGE);
 		} else if (responseLine.charAt(1) == 's') {
 			int lengthOfSunkenShip = (responseLine.length() - 2) / 2;
 			for (int i = 1; i <= lengthOfSunkenShip; i++) {
-				int x = responseLine.charAt(i*2) - 48;
-				int y = responseLine.charAt(1+i*2) - 48;
+				int x = responseLine.charAt(i * 2) - 48;
+				int y = responseLine.charAt(1 + i * 2) - 48;
 				opponentsBattleFieldCells[x][y].setBackground(Color.RED);
 			}
 		}
