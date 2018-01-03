@@ -13,14 +13,15 @@ class ClientThread extends Thread
     private Socket clientSocket = null;
     private static ClientThread[] threads;
 
-
     private Board board = new Board(10, 10);
+    private boolean isFirstTurn;
 
 
     public ClientThread(Socket clientSocket, ClientThread[] threads)
     {
         this.clientSocket = clientSocket;
         this.threads = threads;
+        this.isFirstTurn = false;
     }
 
     public void run() {
@@ -32,13 +33,15 @@ class ClientThread extends Thread
             bufferedReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             dataOutputStream = new DataOutputStream(clientSocket.getOutputStream());
 
+            System.out.println("Connected to " + clientSocket.getRemoteSocketAddress());
+
             if (threads[threads.length - 1] == null && threads[threads.length - 1] != this) {
                 synchronized (this) {
                     wait();
                 }
             }
 
-            dataOutputStream.writeBytes(board.getBoardAsString() + '\n');
+            dataOutputStream.writeBytes((isFirstTurn ? '1' : '0') + board.getBoardAsString() + '\n');
 
             for(ClientThread thread: threads)
             {
@@ -63,6 +66,7 @@ class ClientThread extends Thread
                     else
                         checkWinner = '.';
                     dataOutputStream.writeBytes(checkWinner + checkHit + '\n');
+                    opponent.dataOutputStream.writeBytes(checkWinner + checkHit + '\n');
                     System.out.println(clientSocket.getRemoteSocketAddress() + "'s ship got " +checkWinner + checkHit);
                 }
             }
@@ -102,5 +106,10 @@ class ClientThread extends Thread
                 threads[i] = null;
             }
         }
+    }
+
+    protected void setFirstTurn()
+    {
+        this.isFirstTurn = true;
     }
 }

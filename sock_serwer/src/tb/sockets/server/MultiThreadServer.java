@@ -37,11 +37,14 @@ public class MultiThreadServer {
 					os.close();
 					clientSocket.close();
 				}
+
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 			if (checkIfAllPlayersConnected())
 			{
+				int firstPlayer = drawFirstPlayer();
+				threads[firstPlayer].setFirstTurn();
 				ClientThread.startGame();
 			}
 		}
@@ -57,6 +60,16 @@ public class MultiThreadServer {
 		for(ClientThread thread: clientThreads)
 		{
 			threads[i] = thread;
+		}
+	}
+
+	private static int drawFirstPlayer()
+	{
+		if(Math.random() < 0.5)
+		{
+			return 0;
+		} else {
+			return 1;
 		}
 	}
 }
