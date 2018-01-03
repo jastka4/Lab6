@@ -247,10 +247,11 @@ public class ClientApp extends JFrame implements ActionListener {
 	private void processResponse(String responseLine) {
 		if (responseLine.charAt(0) == '.') {
 			// game continues
-			JOptionPane.showMessageDialog(this, "You've lost the game :(\n Wanna play another game?");
 		} else if (responseLine.charAt(0) == 'L') {
 			// game is lost
+			JOptionPane.showMessageDialog(this, "You've lost the game :(");
 		} else if (responseLine.charAt(0) == 'W') {
+			JOptionPane.showMessageDialog(this, "You've won the game :)");
 			// game is won
 		}
 		updateOpponentsBattleField(responseLine, shotCoordinates);
