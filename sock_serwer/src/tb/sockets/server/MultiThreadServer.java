@@ -4,7 +4,8 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class MultiThreadServer {
+public class MultiThreadServer
+{
 
 	private static ServerSocket serverSocket = null;
 	private static Socket clientSocket = null;
@@ -13,7 +14,8 @@ public class MultiThreadServer {
 	private static final int maxClientsCount = 2;
 	private static final ClientThread[] threads = new ClientThread[maxClientsCount];
 
-	public static void main(String[] args) {
+	public static void main(String[] args)
+	{
 		try {
 			serverSocket = new ServerSocket(6666);
 		}
@@ -21,36 +23,41 @@ public class MultiThreadServer {
 		{
 			e.printStackTrace();
 		}
-		while (true) {
+		while (true)
+		{
 			try {
 				clientSocket = serverSocket.accept();
 				int i = 0;
-				for (i = 0; i < maxClientsCount; i++) {
+				for (i = 0; i < maxClientsCount; i++)
+				{
 					if (threads[i] == null) {
 						(threads[i] = new ClientThread(clientSocket, threads)).start();
 						break;
 					}
 				}
-				if (i == maxClientsCount) {
+				if (i == maxClientsCount)
+				{
 					DataOutputStream os = new DataOutputStream(clientSocket.getOutputStream());
 					os.writeBytes("Server too busy. Try later.");
 					os.close();
 					clientSocket.close();
 				}
 
-			} catch (IOException e) {
+			} catch (IOException e)
+			{
 				e.printStackTrace();
 			}
 			if (checkIfAllPlayersConnected())
 			{
-				int firstPlayer = drawFirstPlayer();
+				int firstPlayer = (Math.random() < 0.5) ? 0 : 1;
 				threads[firstPlayer].setFirstTurn();
 				ClientThread.startGame();
 			}
 		}
 	}
 
-	private static boolean checkIfAllPlayersConnected() {
+	private static boolean checkIfAllPlayersConnected()
+	{
 		return threads[maxClientsCount - 1] != null;
 	}
 
@@ -60,16 +67,6 @@ public class MultiThreadServer {
 		for(ClientThread thread: clientThreads)
 		{
 			threads[i] = thread;
-		}
-	}
-
-	private static int drawFirstPlayer()
-	{
-		if(Math.random() < 0.5)
-		{
-			return 0;
-		} else {
-			return 1;
 		}
 	}
 }

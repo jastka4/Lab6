@@ -24,7 +24,8 @@ class ClientThread extends Thread
         this.isFirstTurn = false;
     }
 
-    public void run() {
+    public void run()
+    {
         ClientThread opponent = null;
         char checkWinner;
 
@@ -35,7 +36,8 @@ class ClientThread extends Thread
 
             System.out.println("Connected to " + clientSocket.getRemoteSocketAddress());
 
-            if (threads[threads.length - 1] == null && threads[threads.length - 1] != this) {
+            if (threads[threads.length - 1] == null && threads[threads.length - 1] != this)
+            {
                 synchronized (this) {
                     wait();
                 }
@@ -62,12 +64,12 @@ class ClientThread extends Thread
                     if(board.checkIfAllShipsSunken() == true)
                         checkWinner = 'L';
                     else if (opponent.board.checkIfAllShipsSunken() == true)
-                         checkWinner = 'W';
+                        checkWinner = 'W';
                     else
                         checkWinner = '.';
                     dataOutputStream.writeBytes(checkWinner + checkHit + '\n');
                     opponent.dataOutputStream.writeBytes(checkWinner + checkHit + '\n');
-                    System.out.println(clientSocket.getRemoteSocketAddress() + "'s ship got " +checkWinner + checkHit);
+                    System.out.println(clientSocket.getRemoteSocketAddress() + "'s ship got " + checkWinner + checkHit);
                 }
             }
 
@@ -79,9 +81,13 @@ class ClientThread extends Thread
             resetThread();
             MultiThreadServer.updateThreads(threads);
 
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             e.printStackTrace();
-        } catch (InterruptedException e) {
+        }
+        catch (InterruptedException e)
+        {
             e.printStackTrace();
         }
     }
