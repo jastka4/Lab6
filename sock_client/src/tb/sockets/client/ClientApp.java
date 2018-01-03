@@ -27,7 +27,7 @@ import javax.swing.SwingConstants;
 public class ClientApp extends JFrame implements ActionListener {
 	private static final long serialVersionUID = -7165003859696110622L;
 
-	private String ipSerwera = "172.16.24.211";
+	private String ipSerwera = "localhost";
 
 	private JPanel contentPane;
 	private JPanel opponentsBattlefield = new JPanel(); // plansza przeciwnika - ta po lewej - ta którą odgaduję
@@ -40,6 +40,7 @@ public class ClientApp extends JFrame implements ActionListener {
 	private JButton btnZatopiony = new JButton("");
 	private JButton btnStatek = new JButton("");
 	private JButton btnMorze = new JButton("");
+	private JButton btnStartGame = new JButton("Start game!");
 	private JLabel lblNieodkryte = new JLabel("nieodkryte");
 	private JLabel lblPudlo = new JLabel("pud\u0142o");
 	private JLabel lblTrafiony = new JLabel("trafiony");
@@ -57,6 +58,7 @@ public class ClientApp extends JFrame implements ActionListener {
 	private String myBoard = "";
 	private String shotCoordinates = "";
 	private boolean isItMyTurn;
+	private boolean doIStart;
 	private String responseLine;
 
 	public static void main(String[] args) {
@@ -87,7 +89,6 @@ public class ClientApp extends JFrame implements ActionListener {
 				}
 			}
 		});
-		gameStart();
 	}
 
 	private void connectToServer() throws UnknownHostException, IOException {
@@ -98,10 +99,12 @@ public class ClientApp extends JFrame implements ActionListener {
 		myBoard = is.readLine();
 
 		if (myBoard.charAt(0) == '0') { // first char in myBoard determines who starts game 1 - you, 0 - opponent
-			isItMyTurn = false;
+			doIStart = isItMyTurn = false;
 		} else {
-			isItMyTurn = true;
+			doIStart = isItMyTurn = true;
 		}
+
+		System.out.println(myBoard);
 		myBoard = myBoard.substring(1);
 		System.out.println(myBoard);
 	}
@@ -153,7 +156,6 @@ public class ClientApp extends JFrame implements ActionListener {
 		try {
 			do {
 				responseLine = is.readLine();
-				System.out.println(responseLine);
 				processResponse(responseLine);
 			} while (responseLine.charAt(1) != 'm');
 		} catch (IOException e) {
@@ -162,7 +164,7 @@ public class ClientApp extends JFrame implements ActionListener {
 	}
 
 	public void actionPerformed(ActionEvent e) {
-		Object src = (JButton) e.getSource();
+		JButton src = (JButton) e.getSource();
 		for (int i = 0; i < opponentsBattleFieldCells.length; i++) {
 			for (int j = 0; j < opponentsBattleFieldCells[0].length; j++) {
 				if (src == opponentsBattleFieldCells[i][j]) {
@@ -176,7 +178,6 @@ public class ClientApp extends JFrame implements ActionListener {
 
 					try {
 						responseLine = is.readLine();
-						System.out.println(responseLine);
 						processResponse(responseLine);
 					} catch (IOException e1) {
 						e1.printStackTrace();
@@ -191,11 +192,11 @@ public class ClientApp extends JFrame implements ActionListener {
 			// game continues
 			if (isItMyTurn) {
 				// my turn
-				updateOpponentsBattleField(responseLine, shotCoordinates);
-				System.out.println("my turn");
+				updateOpponentsBattleField(responseLine);
+				System.out.println("My turn");
 			} else {
 				// opponents turn
-				updateMyBattleField(responseLine, shotCoordinates);
+				updateMyBattleField(responseLine);
 				System.out.println("opps turn");
 			}
 		} else if (responseLine.charAt(0) == 'L') {
@@ -207,16 +208,16 @@ public class ClientApp extends JFrame implements ActionListener {
 		}
 	}
 
-	private void updateOpponentsBattleField(String responseLine, String lastShotLocation) {
-		System.out.println(responseLine + "||" + lastShotLocation);
+	private void updateOpponentsBattleField(String responseLine) {
+		System.out.println(responseLine);
 		if (responseLine.charAt(1) == 'm') {
-			int x = lastShotLocation.charAt(0) - 48;
-			int y = lastShotLocation.charAt(1) - 48;
+			int x = responseLine.charAt(2) - 48;
+			int y = responseLine.charAt(3) - 48;
 			opponentsBattleFieldCells[x][y].setBackground(Color.WHITE);
 			isItMyTurn = !isItMyTurn;
 		} else if (responseLine.charAt(1) == 'h') {
-			int x = lastShotLocation.charAt(0) - 48;
-			int y = lastShotLocation.charAt(1) - 48;
+			int x = responseLine.charAt(2) - 48;
+			int y = responseLine.charAt(3) - 48;
 			opponentsBattleFieldCells[x][y].setBackground(Color.ORANGE);
 		} else if (responseLine.charAt(1) == 's') {
 			int lengthOfSunkenShip = (responseLine.length() - 2) / 2;
@@ -228,16 +229,16 @@ public class ClientApp extends JFrame implements ActionListener {
 		}
 	}
 
-	private void updateMyBattleField(String responseLine, String lastShotLocation) {
-		System.out.println(responseLine + "||" + lastShotLocation);
+	private void updateMyBattleField(String responseLine) {
+		System.out.println(responseLine);
 		if (responseLine.charAt(1) == 'm') {
-			int x = lastShotLocation.charAt(0) - 48;
-			int y = lastShotLocation.charAt(1) - 48;
+			int x = responseLine.charAt(2) - 48;
+			int y = responseLine.charAt(3) - 48;
 			myBattleFieldCells[x][y].setBackground(Color.WHITE);
-			isItMyTurn = !isItMyTurn;
+			// isItMyTurn = !isItMyTurn;
 		} else if (responseLine.charAt(1) == 'h') {
-			int x = lastShotLocation.charAt(0) - 48;
-			int y = lastShotLocation.charAt(1) - 48;
+			int x = responseLine.charAt(2) - 48;
+			int y = responseLine.charAt(3) - 48;
 			myBattleFieldCells[x][y].setBackground(Color.ORANGE);
 		} else if (responseLine.charAt(1) == 's') {
 			int lengthOfSunkenShip = (responseLine.length() - 2) / 2;
@@ -342,5 +343,15 @@ public class ClientApp extends JFrame implements ActionListener {
 		labelWhosTurn.setHorizontalAlignment(SwingConstants.CENTER);
 		labelWhosTurn.setBounds(500, 491, 400, 69);
 		contentPane.add(labelWhosTurn);
+
+		btnStartGame.setBounds(415, 497, 89, 23);
+		if (doIStart) {
+			contentPane.add(btnStartGame);
+			btnStartGame.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent arg0) {
+					gameStart();
+				}
+			});
+		}
 	}
 }
