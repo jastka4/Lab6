@@ -82,6 +82,11 @@ public class ClientApp extends JFrame implements ActionListener {
 				int choose = JOptionPane.showConfirmDialog(e.getComponent(), "Do you really want to close the game?",
 						"Confirm Close", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 				if (choose == JOptionPane.YES_OPTION) {
+					try {
+						os.writeBytes("/quit");
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
 					e.getWindow().dispose();
 				}
 			}
