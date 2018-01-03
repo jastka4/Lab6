@@ -54,6 +54,7 @@ public class ClientApp extends JFrame implements ActionListener {
 	private DataOutputStream os;
 	private String myBoard = "";
 	private String shotCoordinates = "";
+	private boolean isItMyTurn;
 
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -99,6 +100,14 @@ public class ClientApp extends JFrame implements ActionListener {
 		is = new BufferedReader(new InputStreamReader(in));
 		os = new DataOutputStream(socket.getOutputStream());
 		myBoard = is.readLine();
+
+		if (myBoard.charAt(0) == '0') { // first char in myBoard determines who starts game 1 - you, 0 - opponent
+			isItMyTurn = false;
+		} else {
+			isItMyTurn = true;
+		}
+
+		myBoard = myBoard.substring(1);
 		System.out.println(myBoard);
 	}
 
@@ -252,19 +261,48 @@ public class ClientApp extends JFrame implements ActionListener {
 	private void processResponse(String responseLine) {
 		if (responseLine.charAt(0) == '.') {
 			// game continues
+			if (isItMyTurn) {
+				// my turn
+				updateOpponentsBattleField(responseLine, shotCoordinates);
+			} else {
+				// opponents turn
+				updateMyBattleField(responseLine, shotCoordinates);
+			}
 		} else if (responseLine.charAt(0) == 'L') {
 			// game is lost
 			JOptionPane.showMessageDialog(this, "You've lost the game :(");
 		} else if (responseLine.charAt(0) == 'W') {
-			JOptionPane.showMessageDialog(this, "You've won the game :)");
 			// game is won
+			JOptionPane.showMessageDialog(this, "You've won the game :)");
 		}
 		updateOpponentsBattleField(responseLine, shotCoordinates);
 	}
 
-	private void updateOpponentsBattleField(String responseLine, String lastShotLocation) { // TODO dokonczyc
+	private void updateOpponentsBattleField(String responseLine, String lastShotLocation) {
 		System.out.println(responseLine + "||" + lastShotLocation);
 		if (responseLine.charAt(1) == 'm') {
+			// zablokuj gre i wyswietl komunikat o czekaniu
+			int x = lastShotLocation.charAt(0) - 48;
+			int y = lastShotLocation.charAt(1) - 48;
+			opponentsBattleFieldCells[x][y].setBackground(Color.WHITE);
+		} else if (responseLine.charAt(1) == 'h') {
+			int x = lastShotLocation.charAt(0) - 48;
+			int y = lastShotLocation.charAt(1) - 48;
+			opponentsBattleFieldCells[x][y].setBackground(Color.ORANGE);
+		} else if (responseLine.charAt(1) == 's') {
+			int lengthOfSunkenShip = (responseLine.length() - 2) / 2;
+			for (int i = 1; i <= lengthOfSunkenShip; i++) {
+				int x = responseLine.charAt(i * 2) - 48;
+				int y = responseLine.charAt(1 + i * 2) - 48;
+				opponentsBattleFieldCells[x][y].setBackground(Color.RED);
+			}
+		}
+	}
+
+	private void updateMyBattleField(String responseLine, String lastShotLocation) {
+		System.out.println(responseLine + "||" + lastShotLocation);
+		if (responseLine.charAt(1) == 'm') {
+			// zablokuj gre i wyswietl komunikat o czekaniu
 			int x = lastShotLocation.charAt(0) - 48;
 			int y = lastShotLocation.charAt(1) - 48;
 			opponentsBattleFieldCells[x][y].setBackground(Color.WHITE);
