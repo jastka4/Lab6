@@ -2,6 +2,7 @@ package tb.sockets.client;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.EventQueue;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -39,7 +40,7 @@ public class ClientApp extends JFrame implements ActionListener {
 	private JButton btnZatopiony = new JButton("");
 	private JButton btnStatek = new JButton("");
 	private JButton btnMorze = new JButton("");
-	private JButton btnStartGame = new JButton("Start game!");
+	private JButton btnStartGame = new JButton("Click to start!");
 	private JLabel lblNieodkryte = new JLabel("nieodkryte");
 	private JLabel lblPudlo = new JLabel("pud\u0142o");
 	private JLabel lblTrafiony = new JLabel("trafiony");
@@ -59,10 +60,20 @@ public class ClientApp extends JFrame implements ActionListener {
 	private boolean isItMyTurn;
 	private boolean doIStart;
 	private String responseLine;
+	private String yourTurnMsg = "Teraz Twoja kolej!";
+	private String opponentsTurnMsg = "Teraz kolej przeciwnika!";
 
 	public static void main(String[] args) {
-		ClientApp frame = new ClientApp();
-		frame.setVisible(true);
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					ClientApp frame = new ClientApp();
+					frame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
 	}
 
 	public ClientApp() {
@@ -80,6 +91,7 @@ public class ClientApp extends JFrame implements ActionListener {
 						"Confirm Close", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 				if (choose == JOptionPane.YES_OPTION) {
 					try {
+						System.out.println("/quit");
 						os.writeBytes("/quit");
 					} catch (IOException e1) {
 						e1.printStackTrace();
@@ -99,19 +111,24 @@ public class ClientApp extends JFrame implements ActionListener {
 
 		if (myBoard.charAt(0) == '0') { // first char in myBoard determines who starts game 1 - you, 0 - opponent
 			doIStart = isItMyTurn = false;
+			System.out.println("I go second!");
 		} else {
+			System.out.println("I go first!");
 			doIStart = isItMyTurn = true;
 		}
-
-		System.out.println(myBoard);
 		myBoard = myBoard.substring(1);
-		System.out.println(myBoard);
 	}
 
 	private void gameStart() {
 		if (isItMyTurn) {
-			labelWhosTurn.setText("Your turn");
+			labelWhosTurn.setText(yourTurnMsg);
 		} else {
+			System.out.println("Waiting...");
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 			waitingForOpponentsMove();
 		}
 	}
@@ -150,13 +167,15 @@ public class ClientApp extends JFrame implements ActionListener {
 	public void waitingForOpponentsMove() {
 		// hang the turn, don't allow player to click and wait for server's info about
 		// opponents move
-		labelWhosTurn.setText("Waiting for opponent's turn");
+		labelWhosTurn.setText(opponentsTurnMsg);
+		System.out.println("Waiting2...");
 
 		try {
 			do {
 				responseLine = is.readLine();
+				System.out.println(responseLine);
 				processResponse(responseLine);
-			} while (responseLine.charAt(1) != 'm');
+			} while (responseLine.charAt(1) == 'm');
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -192,11 +211,11 @@ public class ClientApp extends JFrame implements ActionListener {
 			if (isItMyTurn) {
 				// my turn
 				updateOpponentsBattleField(responseLine);
-				System.out.println("My turn");
+				labelWhosTurn.setText(yourTurnMsg);
 			} else {
 				// opponents turn
 				updateMyBattleField(responseLine);
-				System.out.println("opps turn");
+				labelWhosTurn.setText(opponentsTurnMsg);
 			}
 		} else if (responseLine.charAt(0) == 'L') {
 			// game is lost
@@ -234,7 +253,7 @@ public class ClientApp extends JFrame implements ActionListener {
 			int x = responseLine.charAt(2) - 48;
 			int y = responseLine.charAt(3) - 48;
 			myBattleFieldCells[x][y].setBackground(Color.WHITE);
-			// isItMyTurn = !isItMyTurn;
+			isItMyTurn = !isItMyTurn;
 		} else if (responseLine.charAt(1) == 'h') {
 			int x = responseLine.charAt(2) - 48;
 			int y = responseLine.charAt(3) - 48;
@@ -343,14 +362,23 @@ public class ClientApp extends JFrame implements ActionListener {
 		labelWhosTurn.setBounds(500, 491, 400, 69);
 		contentPane.add(labelWhosTurn);
 
-		btnStartGame.setBounds(415, 497, 89, 23);
+		opponentsBattlefield.setEnabled(false);
+
 		if (doIStart) {
-			contentPane.add(btnStartGame);
+			btnStartGame.setBounds(500, 491, 400, 69);
 			btnStartGame.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent arg0) {
+					btnStartGame.setVisible(false);
+					opponentsBattlefield.setEnabled(true);
 					gameStart();
 				}
 			});
+			contentPane.add(btnStartGame);
+		} else {
+			labelWhosTurn.setText(opponentsTurnMsg);
+			opponentsBattlefield.setEnabled(false);
+			gameStart();
+			
 		}
 	}
 }
