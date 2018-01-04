@@ -40,7 +40,7 @@ public class ClientApp extends JFrame implements ActionListener {
 	private JButton btnZatopiony = new JButton("");
 	private JButton btnStatek = new JButton("");
 	private JButton btnMorze = new JButton("");
-	private JButton btnStartGame = new JButton("Click to start!");
+	private JButton btnStartGame = new JButton("Start!");
 	private JLabel lblNieodkryte = new JLabel("nieodkryte");
 	private JLabel lblPudlo = new JLabel("pud\u0142o");
 	private JLabel lblTrafiony = new JLabel("trafiony");
@@ -123,12 +123,6 @@ public class ClientApp extends JFrame implements ActionListener {
 		if (isItMyTurn) {
 			labelWhosTurn.setText(yourTurnMsg);
 		} else {
-			System.out.println("Waiting...");
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
 			waitingForOpponentsMove();
 		}
 	}
@@ -168,14 +162,12 @@ public class ClientApp extends JFrame implements ActionListener {
 		// hang the turn, don't allow player to click and wait for server's info about
 		// opponents move
 		labelWhosTurn.setText(opponentsTurnMsg);
-		System.out.println("Waiting2...");
-
 		try {
 			do {
 				responseLine = is.readLine();
 				System.out.println(responseLine);
 				processResponse(responseLine);
-			} while (responseLine.charAt(1) == 'm');
+			} while (responseLine.charAt(1) != 'm');
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -362,23 +354,26 @@ public class ClientApp extends JFrame implements ActionListener {
 		labelWhosTurn.setBounds(500, 491, 400, 69);
 		contentPane.add(labelWhosTurn);
 
-		opponentsBattlefield.setEnabled(false);
-
+		btnStartGame.setBounds(418, 511, 89, 23);
+		contentPane.add(btnStartGame);
 		if (doIStart) {
-			btnStartGame.setBounds(500, 491, 400, 69);
-			btnStartGame.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent arg0) {
-					btnStartGame.setVisible(false);
-					opponentsBattlefield.setEnabled(true);
-					gameStart();
-				}
-			});
-			contentPane.add(btnStartGame);
+			labelWhosTurn.setText("Naciœnij Start aby rozpocz¹æ");
 		} else {
-			labelWhosTurn.setText(opponentsTurnMsg);
-			opponentsBattlefield.setEnabled(false);
-			gameStart();
-			
+			labelWhosTurn.setText("Naciœnij Start i poczekaj na swoj¹ turê");
 		}
+
+		btnStartGame.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				if (doIStart) {
+					labelWhosTurn.setText(yourTurnMsg);
+					opponentsBattlefield.setEnabled(true);
+				} else {
+					labelWhosTurn.setText(opponentsTurnMsg);
+					opponentsBattlefield.setEnabled(false);
+				}
+				btnStartGame.setEnabled(false);
+				gameStart();
+			}
+		});
 	}
 }
