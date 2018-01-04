@@ -23,11 +23,12 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingWorker;
 
 public class ClientApp extends JFrame implements ActionListener {
 	private static final long serialVersionUID = -7165003859696110622L;
 
-	private String ipSerwera = "localhost";
+	private String ipSerwera = "172.16.82.92";
 
 	private JPanel contentPane;
 	private JPanel opponentsBattlefield = new JPanel(); // plansza przeciwnika - ta po lewej - ta ktÃ³rÄ… odgadujÄ™
@@ -40,7 +41,7 @@ public class ClientApp extends JFrame implements ActionListener {
 	private JButton btnZatopiony = new JButton("");
 	private JButton btnStatek = new JButton("");
 	private JButton btnMorze = new JButton("");
-	private JButton btnStartGame = new JButton("Start game!");
+	private JButton btnStartGame = new JButton("Start!");
 	private JLabel lblNieodkryte = new JLabel("nieodkryte");
 	private JLabel lblPudlo = new JLabel("pud\u0142o");
 	private JLabel lblTrafiony = new JLabel("trafiony");
@@ -60,10 +61,20 @@ public class ClientApp extends JFrame implements ActionListener {
 	private boolean isItMyTurn;
 	private boolean doIStart;
 	private String responseLine;
+	private String yourTurnMsg = "Teraz Twoja kolej!";
+	private String opponentsTurnMsg = "Teraz kolej przeciwnika!";
 
 	public static void main(String[] args) {
-		ClientApp frame = new ClientApp();
-		frame.setVisible(true);
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					ClientApp frame = new ClientApp();
+					frame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
 	}
 
 	public ClientApp() {
@@ -81,6 +92,7 @@ public class ClientApp extends JFrame implements ActionListener {
 						"Confirm Close", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 				if (choose == JOptionPane.YES_OPTION) {
 					try {
+						System.out.println("/quit");
 						os.writeBytes("/quit");
 					} catch (IOException e1) {
 						e1.printStackTrace();
@@ -100,21 +112,22 @@ public class ClientApp extends JFrame implements ActionListener {
 
 		if (myBoard.charAt(0) == '0') { // first char in myBoard determines who starts game 1 - you, 0 - opponent
 			doIStart = isItMyTurn = false;
+			System.out.println("I go second!");
 		} else {
+			System.out.println("I go first!");
 			doIStart = isItMyTurn = true;
 		}
-
-		System.out.println(myBoard);
 		myBoard = myBoard.substring(1);
-		System.out.println(myBoard);
 	}
 
-	private void gameStart() {
+	private String gameRun() {
 		if (isItMyTurn) {
-			labelWhosTurn.setText("Your turn");
+			labelWhosTurn.setText(yourTurnMsg);
 		} else {
-			waitingForOpponentsMove();
+			labelWhosTurn.setText(opponentsTurnMsg);
+			return waitingForOpponentsMove();
 		}
+		return null;
 	}
 
 	private void setupOpponentsBattlefield() {
@@ -148,19 +161,31 @@ public class ClientApp extends JFrame implements ActionListener {
 		}
 	}
 
-	public void waitingForOpponentsMove() {
+	public String waitingForOpponentsMove() {
 		// hang the turn, don't allow player to click and wait for server's info about
 		// opponents move
-		labelWhosTurn.setText("Waiting for opponent's turn");
+		SwingWorker<String, Void> worker = new SwingWorker<String, Void>() {
 
-		try {
-			do {
-				responseLine = is.readLine();
+			@Override
+			protected String doInBackground() throws Exception {
+				System.out.println("Processing");
+				do {
+					responseLine = is.readLine();
+					if(responseLine.charAt(1) == 'h' || responseLine.charAt(1) == 's')
+						processResponse(responseLine);
+				} while (responseLine.charAt(1) != 'm');
+
+				return responseLine;
+			}
+
+			@Override
+			protected void done() {
 				processResponse(responseLine);
-			} while (responseLine.charAt(1) != 'm');
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+				System.out.println("Recieved response from server - " + responseLine);
+			}
+		};
+		worker.execute();
+		return null;
 	}
 
 	public void actionPerformed(ActionEvent e) {
@@ -176,28 +201,45 @@ public class ClientApp extends JFrame implements ActionListener {
 						e1.printStackTrace();
 					}
 
-					try {
-						responseLine = is.readLine();
-						processResponse(responseLine);
-					} catch (IOException e1) {
-						e1.printStackTrace();
-					}
+					SwingWorker<String, Void> worker = new SwingWorker<String, Void>() {
+
+						@Override
+						protected String doInBackground() throws Exception {
+							responseLine = is.readLine();
+							return responseLine;
+						}
+
+						@Override
+						protected void done() {
+							processResponse(responseLine);
+							System.out.println("Recieved response from server - " + responseLine);
+						}
+					};
+					worker.execute();
 				}
 			}
 		}
+		gameRun();
 	}
 
 	private void processResponse(String responseLine) {
+		System.out.println(isItMyTurn + ", " + responseLine);
+		// if (isItMyTurn) {
+		// contentPane.setEnabled(true);
+		// } else {
+		// contentPane.setEnabled(false);
+		// }
+
 		if (responseLine.charAt(0) == '.') {
 			// game continues
 			if (isItMyTurn) {
 				// my turn
 				updateOpponentsBattleField(responseLine);
-				System.out.println("My turn");
+				//labelWhosTurn.setText(opponentsTurnMsg);
 			} else {
 				// opponents turn
 				updateMyBattleField(responseLine);
-				System.out.println("opps turn");
+				//labelWhosTurn.setText(yourTurnMsg);
 			}
 		} else if (responseLine.charAt(0) == 'L') {
 			// game is lost
@@ -208,13 +250,21 @@ public class ClientApp extends JFrame implements ActionListener {
 		}
 	}
 
+	private void toggleLabelWhosTurn() {
+		if (labelWhosTurn.getText().equals(yourTurnMsg)) {
+			labelWhosTurn.setText(opponentsTurnMsg);
+		} else {
+			labelWhosTurn.setText(yourTurnMsg);
+		}
+	}
+
 	private void updateOpponentsBattleField(String responseLine) {
-		System.out.println(responseLine);
 		if (responseLine.charAt(1) == 'm') {
 			int x = responseLine.charAt(2) - 48;
 			int y = responseLine.charAt(3) - 48;
 			opponentsBattleFieldCells[x][y].setBackground(Color.WHITE);
 			isItMyTurn = !isItMyTurn;
+			toggleLabelWhosTurn();
 		} else if (responseLine.charAt(1) == 'h') {
 			int x = responseLine.charAt(2) - 48;
 			int y = responseLine.charAt(3) - 48;
@@ -230,12 +280,12 @@ public class ClientApp extends JFrame implements ActionListener {
 	}
 
 	private void updateMyBattleField(String responseLine) {
-		System.out.println(responseLine);
 		if (responseLine.charAt(1) == 'm') {
 			int x = responseLine.charAt(2) - 48;
 			int y = responseLine.charAt(3) - 48;
 			myBattleFieldCells[x][y].setBackground(Color.WHITE);
-			// isItMyTurn = !isItMyTurn;
+			isItMyTurn = !isItMyTurn;
+			toggleLabelWhosTurn();
 		} else if (responseLine.charAt(1) == 'h') {
 			int x = responseLine.charAt(2) - 48;
 			int y = responseLine.charAt(3) - 48;
@@ -344,14 +394,37 @@ public class ClientApp extends JFrame implements ActionListener {
 		labelWhosTurn.setBounds(500, 491, 400, 69);
 		contentPane.add(labelWhosTurn);
 
-		btnStartGame.setBounds(415, 497, 89, 23);
+		btnStartGame.setBounds(418, 511, 89, 23);
+		contentPane.add(btnStartGame);
 		if (doIStart) {
-			contentPane.add(btnStartGame);
-			btnStartGame.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent arg0) {
-					gameStart();
-				}
-			});
+			labelWhosTurn.setText("Naciœnij Start aby rozpocz¹æ");
+		} else {
+			labelWhosTurn.setText("Naciœnij Start i poczekaj na swoj¹ turê");
 		}
+
+		btnStartGame.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				if (doIStart) {
+					labelWhosTurn.setText(yourTurnMsg);
+				} else {
+					labelWhosTurn.setText(opponentsTurnMsg);
+				}
+				btnStartGame.setEnabled(false);
+
+				SwingWorker<String, Void> worker = new SwingWorker<String, Void>() {
+
+					@Override
+					protected String doInBackground() throws Exception {
+						String tmp = gameRun();
+						return tmp;
+					}
+
+					@Override
+					protected void done() {
+					}
+				};
+				worker.execute();
+			}
+		});
 	}
 }
