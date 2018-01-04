@@ -164,24 +164,27 @@ public class ClientApp extends JFrame implements ActionListener {
 	public String waitingForOpponentsMove() {
 		// hang the turn, don't allow player to click and wait for server's info about
 		// opponents move
-		do {
-			SwingWorker<String, Void> worker = new SwingWorker<String, Void>() {
+		SwingWorker<String, Void> worker = new SwingWorker<String, Void>() {
 
-				@Override
-				protected String doInBackground() throws Exception {
+			@Override
+			protected String doInBackground() throws Exception {
+				System.out.println("Processing");
+				do {
 					responseLine = is.readLine();
-					return responseLine;
-				}
+					if(responseLine.charAt(1) == 'h' || responseLine.charAt(1) == 's')
+						processResponse(responseLine);
+				} while (responseLine.charAt(1) != 'm');
 
-				@Override
-				protected void done() {
-					processResponse(responseLine);
-					System.out.println("Recieved response from server - " + responseLine);
-				}
-			};
-			worker.execute();
-		} while (responseLine.charAt(1) != 'm');
+				return responseLine;
+			}
 
+			@Override
+			protected void done() {
+				processResponse(responseLine);
+				System.out.println("Recieved response from server - " + responseLine);
+			}
+		};
+		worker.execute();
 		return null;
 	}
 
