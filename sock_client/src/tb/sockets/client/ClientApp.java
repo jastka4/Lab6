@@ -28,13 +28,13 @@ import javax.swing.SwingWorker;
 public class ClientApp extends JFrame implements ActionListener {
 	private static final long serialVersionUID = -7165003859696110622L;
 
-	private String ipSerwera = "172.16.82.92";
+	private String ipSerwera = "localhost";
 
 	private JPanel contentPane;
-	private JPanel opponentsBattlefield = new JPanel(); // plansza przeciwnika - ta po lewej - ta którą odgaduję
+	private JPanel opponentsBattlefield = new JPanel(); // plansza przeciwnika - ta po lewej - ta ktÃ³rÄ odgadujÄ
 	private JPanel myBattlefield = new JPanel(); // plansza moja - po prawej
-	private JButton[][] opponentsBattleFieldCells = new JButton[10][10]; // grid buttonów 10x10 na planszy przeciwnika
-	private JButton[][] myBattleFieldCells = new JButton[10][10]; // grid buttonów 10x10 na mojej planszy
+	private JButton[][] opponentsBattleFieldCells = new JButton[10][10]; // grid buttonÃ³w 10x10 na planszy przeciwnika
+	private JButton[][] myBattleFieldCells = new JButton[10][10]; // grid buttonÃ³w 10x10 na mojej planszy
 	private JButton btnNieodkryte = new JButton("");
 	private JButton btnPudlo = new JButton("");
 	private JButton btnTrafiony = new JButton("");
@@ -201,21 +201,12 @@ public class ClientApp extends JFrame implements ActionListener {
 						e1.printStackTrace();
 					}
 
-					SwingWorker<String, Void> worker = new SwingWorker<String, Void>() {
-
-						@Override
-						protected String doInBackground() throws Exception {
-							responseLine = is.readLine();
-							return responseLine;
-						}
-
-						@Override
-						protected void done() {
-							processResponse(responseLine);
-							System.out.println("Recieved response from server - " + responseLine);
-						}
-					};
-					worker.execute();
+					try {
+						responseLine = is.readLine();
+						processResponse(responseLine);
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
 				}
 			}
 		}
@@ -235,11 +226,11 @@ public class ClientApp extends JFrame implements ActionListener {
 			if (isItMyTurn) {
 				// my turn
 				updateOpponentsBattleField(responseLine);
-				//labelWhosTurn.setText(opponentsTurnMsg);
+				labelWhosTurn.setText(opponentsTurnMsg);
 			} else {
 				// opponents turn
 				updateMyBattleField(responseLine);
-				//labelWhosTurn.setText(yourTurnMsg);
+				labelWhosTurn.setText(yourTurnMsg);
 			}
 		} else if (responseLine.charAt(0) == 'L') {
 			// game is lost
@@ -397,9 +388,9 @@ public class ClientApp extends JFrame implements ActionListener {
 		btnStartGame.setBounds(418, 511, 89, 23);
 		contentPane.add(btnStartGame);
 		if (doIStart) {
-			labelWhosTurn.setText("Naci�nij Start aby rozpocz��");
+			labelWhosTurn.setText("Nacinij Start aby rozpocz¹æ");
 		} else {
-			labelWhosTurn.setText("Naci�nij Start i poczekaj na swoj� tur�");
+			labelWhosTurn.setText("Nacinij Start i poczekaj na swoj¹ turê");
 		}
 
 		btnStartGame.addActionListener(new ActionListener() {
