@@ -32,47 +32,35 @@ public class Board {
                     // Check for vertical space
                     boolean hasSpace = true;
                     for (int i = 0; i < length; i++){
-                        if (y + i >= boardLengthY) {
-                            hasSpace = false;
-                            break;
-                        }
-                        if (!checkIfHasSpace(x, y + i)) {
+                        if (!checkIfHasSpace(x, y + i) || (y + i >= boardLengthY)) {
                         hasSpace = false;
                         break;
                         }
                     }
-                    if (!hasSpace) {
-                        // No room there, check again
-                        continue;
+                    if (hasSpace) {
+                        for (int i = 0; i < length; i++) {
+                            //System.out.println(new Point(x, y + i));
+                            battleship.addCoordinate(new Point(x, y + i));
+                        }
+                        added = true;
                     }
-                    for (int i = 0; i < length; i++) {
-                        //System.out.println(new Point(x, y + i));
-                        battleship.addCoordinate(new Point(x, y + i));
-                    }
-                    added = true;
                 } else {
                     // Check for horizontal space
                     boolean hasSpace = true;
                     for (int i = 0; i < length; i++) {
-                        if (x + i >= boardLengthX) {
-                            hasSpace = false;
-                            break;
-                        }
-                        if(!checkIfHasSpace(x + i, y))
+                        if(!checkIfHasSpace(x + i, y) || (x + i >= boardLengthX))
                         {
                             hasSpace = false;
                             break;
                         }
                     }
-                    if (!hasSpace) {
-                        // No room there, check again
-                        continue;
+                    if (hasSpace) {
+                        for (int i = 0; i < length; i++) {
+                            //System.out.println(new Point(x + i, y));
+                            battleship.addCoordinate(new Point(x + i, y));
+                        }
+                        added = true;
                     }
-                    for (int i = 0; i < length; i++) {
-                        //System.out.println(new Point(x + i, y));
-                        battleship.addCoordinate(new Point(x + i, y));
-                    }
-                    added = true;
                 }
             }
             battleships.add(battleship);
