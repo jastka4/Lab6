@@ -28,7 +28,7 @@ import javax.swing.SwingWorker;
 public class ClientApp extends JFrame implements ActionListener {
 	private static final long serialVersionUID = -7165003859696110622L;
 
-	private String ipSerwera = "localhost";
+	private String ipSerwera = "172.16.82.92";
 
 	private JPanel contentPane;
 	private JPanel opponentsBattlefield = new JPanel(); // plansza przeciwnika - ta po lewej - ta którą odgaduję
@@ -198,12 +198,21 @@ public class ClientApp extends JFrame implements ActionListener {
 						e1.printStackTrace();
 					}
 
-					try {
-						responseLine = is.readLine();
-						processResponse(responseLine);
-					} catch (IOException e1) {
-						e1.printStackTrace();
-					}
+					SwingWorker<String, Void> worker = new SwingWorker<String, Void>() {
+
+						@Override
+						protected String doInBackground() throws Exception {
+							responseLine = is.readLine();
+							return responseLine;
+						}
+
+						@Override
+						protected void done() {
+							processResponse(responseLine);
+							System.out.println("Recieved response from server - " + responseLine);
+						}
+					};
+					worker.execute();
 				}
 			}
 		}
@@ -223,11 +232,11 @@ public class ClientApp extends JFrame implements ActionListener {
 			if (isItMyTurn) {
 				// my turn
 				updateOpponentsBattleField(responseLine);
-				labelWhosTurn.setText(opponentsTurnMsg);
+				//labelWhosTurn.setText(opponentsTurnMsg);
 			} else {
 				// opponents turn
 				updateMyBattleField(responseLine);
-				labelWhosTurn.setText(yourTurnMsg);
+				//labelWhosTurn.setText(yourTurnMsg);
 			}
 		} else if (responseLine.charAt(0) == 'L') {
 			// game is lost
