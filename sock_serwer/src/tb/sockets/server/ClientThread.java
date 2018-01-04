@@ -14,14 +14,16 @@ class ClientThread extends Thread
     private static ClientThread[] threads;
 
     private Board board = new Board(10, 10);
-    private boolean isFirstTurn;
+    private boolean firstTurn;
+    private boolean running;
 
 
     public ClientThread(Socket clientSocket, ClientThread[] threads)
     {
         this.clientSocket = clientSocket;
         this.threads = threads;
-        this.isFirstTurn = false;
+        this.firstTurn = false;
+        this.running = false;
     }
 
     public void run()
@@ -43,7 +45,7 @@ class ClientThread extends Thread
                 }
             }
 
-            dataOutputStream.writeBytes((isFirstTurn ? '1' : '0') + board.getBoardAsString() + '\n');
+            dataOutputStream.writeBytes((firstTurn ? '1' : '0') + board.getBoardAsString() + '\n');
 
             for(ClientThread thread: threads)
             {
@@ -55,7 +57,7 @@ class ClientThread extends Thread
             while ((responseLine = bufferedReader.readLine()) != null ) {
                 if(responseLine.startsWith("/quit"))
                 {
-                    break;
+                    disconnect();
                 }
                 int x = Character.getNumericValue(responseLine.charAt(0));
                 int y = Character.getNumericValue(responseLine.charAt(1));
@@ -72,15 +74,6 @@ class ClientThread extends Thread
                     System.out.println(clientSocket.getRemoteSocketAddress() + "'s ship got " + checkWinner + checkHit);
                 }
             }
-
-            System.out.println("Connection closed with " + clientSocket.getRemoteSocketAddress());
-            bufferedReader.close();
-            dataOutputStream.close();
-            clientSocket.close();
-
-            resetThread();
-            MultiThreadServer.updateThreads(threads);
-
         }
         catch (IOException e)
         {
@@ -89,6 +82,9 @@ class ClientThread extends Thread
         catch (InterruptedException e)
         {
             e.printStackTrace();
+        }
+        finally {
+            disconnect();
         }
     }
 
@@ -101,6 +97,34 @@ class ClientThread extends Thread
                 threads[i].notify();
             }
         }
+    }
+    public void disconnect()
+    {
+        running = false;
+        if(this != null)
+            this.interrupt();
+        resetThread();
+        MultiThreadServer.updateThreads(threads);
+
+        try
+        {
+            bufferedReader.close();
+        }catch(Exception e){}
+        bufferedReader = null;
+
+        try
+        {
+            dataOutputStream.close();
+        }catch(Exception e){}
+        dataOutputStream = null;
+        try
+        {
+            System.out.println("Connection closed with " + clientSocket.getRemoteSocketAddress());
+            clientSocket.close();
+        }catch(Exception e){}
+
+        clientSocket = null;
+
     }
 
     private synchronized void resetThread()
@@ -116,6 +140,6 @@ class ClientThread extends Thread
 
     protected void setFirstTurn()
     {
-        this.isFirstTurn = true;
+        this.firstTurn = true;
     }
 }

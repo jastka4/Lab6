@@ -4,48 +4,93 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class MultiThreadServer
+public class MultiThreadServer implements Runnable
 {
-
-	private static ServerSocket serverSocket = null;
-	private static Socket clientSocket = null;
-
 	// This server can accept up to maxClientsCount clients' connections.
 	private static final int maxClientsCount = 2;
 	private static final ClientThread[] threads = new ClientThread[maxClientsCount];
 
+	private boolean started;
+	private boolean running;
+	private ServerSocket serverSocket;
+	private Thread serverThread;
+
+	public MultiThreadServer()
+	{
+		this.running = false;
+		this.serverSocket = null;
+		this.serverThread = null;
+		this.started = false;
+	}
+
 	public static void main(String[] args)
 	{
-		try {
-			serverSocket = new ServerSocket(6666);
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
-		while (true)
-		{
-			try {
-				clientSocket = serverSocket.accept();
-				int i = 0;
-				for (i = 0; i < maxClientsCount; i++)
-				{
-					if (threads[i] == null) {
-						(threads[i] = new ClientThread(clientSocket, threads)).start();
-						break;
-					}
-				}
-				if (i == maxClientsCount)
-				{
-					DataOutputStream os = new DataOutputStream(clientSocket.getOutputStream());
-					os.writeBytes("Server too busy. Try later.");
-					os.close();
-					clientSocket.close();
-				}
+		MultiThreadServer server = new MultiThreadServer();
+		server.start();
+	}
 
-			} catch (IOException e)
+	public void start()
+	{
+		if(!started)
+		{
+			started = true;
+			try {
+				serverSocket = new ServerSocket(6666);
+				running = true;
+
+				serverThread = new Thread(this);
+				serverThread.start();
+
+				System.out.println("Server started!\n");
+			}
+			catch (IOException e)
 			{
 				e.printStackTrace();
+				System.exit(0);
+			}
+		}
+	}
+
+	public void stop()
+	{
+		running = false;
+		started = false;
+
+		if(serverThread != null)
+			serverThread.interrupt();
+		serverThread = null;
+	}
+
+	@Override
+	public void run()
+	{
+		try
+		{
+			while (running)
+			{
+				try {
+					Socket clientSocket = serverSocket.accept();
+
+					int i;
+					for (i = 0; i < maxClientsCount; i++)
+					{
+						if (threads[i] == null) {
+							(threads[i] = new ClientThread(clientSocket, threads)).start();
+							break;
+						}
+					}
+					if (i == maxClientsCount)
+					{
+						DataOutputStream os = new DataOutputStream(clientSocket.getOutputStream());
+						os.writeBytes("Server too busy. Try later.");
+						os.close();
+						clientSocket.close();
+					}
+
+				} catch (IOException e)
+				{
+					e.printStackTrace();
+				}
 			}
 			if (checkIfAllPlayersConnected())
 			{
@@ -53,6 +98,14 @@ public class MultiThreadServer
 				threads[firstPlayer].setFirstTurn();
 				ClientThread.startGame();
 			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+		finally
+		{
+			stop();
 		}
 	}
 
